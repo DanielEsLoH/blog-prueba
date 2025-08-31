@@ -74,14 +74,12 @@ const PostsIndex = () => {
     try {
       setSubmitting(true);
 
-      // ✅ Rails espera params anidados en `post`
       await axios.post(
         `${API_URL}/posts`,
         { post: { title: newPost.title, body: newPost.body } },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // 🚫 NO hacemos setPosts aquí → lo manejará ActionCable
       setNewPost({ title: "", body: "" });
       setShowDrawer(false);
     } catch (err) {

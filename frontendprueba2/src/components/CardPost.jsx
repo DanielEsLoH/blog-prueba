@@ -18,7 +18,7 @@ const CardPost = ({ post }) => {
     <div className="bg-white rounded-xl shadow hover:shadow-lg transition-all p-6 text-left">
       <h2 className="font-semibold text-xl mb-2">{post.title}</h2>
       <p className="text-gray-500 mb-2">
-        Publicado por <span className="font-medium">{post.user.name}</span> • {timeAgo(post.created_at)}
+        Posted by <span className="font-medium">{post.user.name}</span> • {timeAgo(post.created_at)}
       </p>
       <p className="text-gray-700 mb-4">
         {post.body.length > 100 ? `${post.body.slice(0, 100)}...` : post.body}
@@ -27,7 +27,7 @@ const CardPost = ({ post }) => {
         to={`/posts/${post.id}`}
         className="inline-flex items-center text-indigo-500 hover:text-indigo-600 font-medium"
       >
-        Leer más
+        Read more
         <ArrowRight className="ml-2 w-4 h-4" />
       </Link>
     </div>

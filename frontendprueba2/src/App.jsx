@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import LandingPage from "./pages/LandingPage";
 import PostsIndex from "./pages/PostsIndex";
 import AuthModal from "./components/AuthModal";
+import PostShow from "./pages/PostShow";
 
 const Home = () => <h1 className="p-4 text-xl">Bienvenido a la App 🚀</h1>;
 
@@ -24,6 +25,7 @@ function App() {
       <Routes>
         {!user && <Route path="/" element={<LandingPage />} />}
         {user && <Route path="/" element={<PostsIndex />} />}
+        <Route path="/posts/:id" element={<PostShow />} />
       </Routes>
       <AuthModal
         show={showAuthModal}
