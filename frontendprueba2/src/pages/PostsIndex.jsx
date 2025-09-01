@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import * as ActionCable from "@rails/actioncable";
 import CardPost from "../components/CardPost";
-import PostForm from "../components/PostForm";
+import PostModal from "../components/PostModal";
 import { useAuth } from "../context/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -12,6 +12,8 @@ const PostsIndex = () => {
   const token = localStorage.getItem("token");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Drawer
   const [showDrawer, setShowDrawer] = useState(false);
   const [newPost, setNewPost] = useState({ title: "", body: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -32,20 +34,21 @@ const PostsIndex = () => {
     };
     fetchPosts();
 
-    // 2️⃣ Conectar a ActionCable
+    // 2️⃣ WebSocket
     const cable = ActionCable.createConsumer("ws://localhost:3000/cable");
     const subscription = cable.subscriptions.create(
       { channel: "PostsChannel" },
       {
-        connected: () => console.log("✅ Conectado al canal PostsChannel"),
-        disconnected: () => console.log("❌ Desconectado del canal PostsChannel"),
         received: (data) => {
-          console.log("📩 WS recibido:", data);
           if (data.post) {
             setPosts((prev) => {
-              if (prev.some((p) => p.id === data.post.id)) return prev;
+              const exists = prev.some((p) => p.id === data.post.id);
+              if (exists) {
+                // update
+                return prev.map((p) => (p.id === data.post.id ? data.post : p));
+              }
+              // new
               const updated = [...prev, data.post];
-              // 🔽 Ordenar por fecha de creación DESC
               return updated.sort(
                 (a, b) => new Date(b.created_at) - new Date(a.created_at)
               );
@@ -64,6 +67,7 @@ const PostsIndex = () => {
     };
   }, [token]);
 
+  // 🔹 Nuevo o edición
   const handleChange = (e) =>
     setNewPost({ ...newPost, [e.target.name]: e.target.value });
 
@@ -74,19 +78,48 @@ const PostsIndex = () => {
     try {
       setSubmitting(true);
 
-      await axios.post(
-        `${API_URL}/posts`,
-        { post: { title: newPost.title, body: newPost.body } },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (newPost.id) {
+        // EDITAR
+        await axios.put(
+          `${API_URL}/posts/${newPost.id}`,
+          { post: { title: newPost.title, body: newPost.body } },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // CREAR
+        await axios.post(
+          `${API_URL}/posts`,
+          { post: { title: newPost.title, body: newPost.body } },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
       setNewPost({ title: "", body: "" });
       setShowDrawer(false);
     } catch (err) {
-      console.error("Error creando post:", err);
+      console.error("Error creando/actualizando post:", err);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // 🔹 Eliminar
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Seguro que quieres eliminar este post?")) return;
+    try {
+      await axios.delete(`${API_URL}/posts/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPosts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Error eliminando post:", err);
+    }
+  };
+
+  // 🔹 Abrir modal en modo edición
+  const handleEdit = (post) => {
+    setNewPost(post);
+    setShowDrawer(true);
   };
 
   if (loading) return <p className="text-center mt-10">Cargando posts...</p>;
@@ -97,7 +130,10 @@ const PostsIndex = () => {
         <h1 className="text-3xl font-bold text-center">Todos los Posts</h1>
         {user && (
           <button
-            onClick={() => setShowDrawer(true)}
+            onClick={() => {
+              setNewPost({ title: "", body: "" });
+              setShowDrawer(true);
+            }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-500 transition"
           >
             Nuevo Post
@@ -105,41 +141,31 @@ const PostsIndex = () => {
         )}
       </div>
 
-      {Array.isArray(posts) && posts.length === 0 ? (
+      {posts.length === 0 ? (
         <p className="text-center text-gray-500">No hay posts aún.</p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.isArray(posts) &&
-            posts.map((post) => <CardPost key={post.id} post={post} />)}
-        </div>
-      )}
-
-      {user && (
-        <div
-          className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform duration-300 z-50 ${
-            showDrawer ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="p-6 flex flex-col h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Crear Nuevo Post</h2>
-              <button
-                onClick={() => setShowDrawer(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <PostForm
-              newPost={newPost}
-              onChange={handleChange}
-              onSubmit={handleSubmit}
-              submitting={submitting}
+          {posts.map((post) => (
+            <CardPost
+              key={post.id}
+              post={post}
+              onEdit={() => handleEdit(post)}
+              onDelete={() => handleDelete(post.id)}
+              canEdit={user && user.id === post.user?.id}
             />
-          </div>
+          ))}
         </div>
       )}
+
+      {/* Drawer unificado */}
+      <PostModal
+        isOpen={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        newPost={newPost}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        submitting={submitting}
+      />
     </div>
   );
 };

@@ -53,7 +53,13 @@ const Navbar = () => {
             ))
           ) : (
             <>
-              <span className="text-gray-700">Hola, {user.name}</span>
+              <span className="text-gray-700">Hellow, {user.name}</span>
+              <Link
+                to="/myposts"
+                className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-all"
+              >
+                My Posts
+              </Link>
               <button
                 onClick={logout}
                 className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-all"
