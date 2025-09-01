@@ -24,41 +24,49 @@ const CardPost = ({ post, onEdit, onDelete }) => {
     } atrás`;
   };
 
+  const truncateText = (text, maxWords = 25) => {
+    const words = text.split(" ");
+    if (words.length > maxWords) {
+      return words.slice(0, maxWords).join(" ") + "...";
+    }
+    return text;
+  };
   return (
-    <div className="bg-white rounded-xl shadow hover:shadow-lg transition-all p-6 text-left">
+    <div className="bg-white rounded-xl shadow hover:shadow-lg transition-all p-6 text-left flex flex-col">
       <h2 className="font-semibold text-xl mb-2">{post.title}</h2>
       <p className="text-gray-500 mb-2">
         Posted by <span className="font-medium">{post.user.name}</span> •{" "}
         {timeAgo(post.created_at)}
       </p>
-      <p className="text-gray-700 mb-4">
-        {post.body.length > 100 ? `${post.body.slice(0, 100)}...` : post.body}
+      <p className="text-gray-700 mb-4 text-justify">
+        {truncateText(post.body, 20)}
       </p>
-      <Link
-        to={`/posts/${post.id}`}
-        className="inline-flex items-center text-indigo-500 hover:text-indigo-600 font-medium"
-      >
-        Read more
-        <ArrowRight className="ml-2 w-4 h-4" />
-      </Link>
+      <div className="mt-auto">
+        <Link
+          to={`/posts/${post.id}`}
+          className="inline-flex items-center text-indigo-500 hover:text-indigo-600 font-medium"
+        >
+          Read more
+          <ArrowRight className="ml-2 w-4 h-4" />
+        </Link>
 
-      {/* Solo botones si el usuario actual es el dueño */}
-      {currentUser?.id === post.user.id && (
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={() => onEdit && onEdit(post)}
-            className="flex items-center gap-1 px-3 py-1 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
-          >
-            <Pencil className="w-4 h-4" /> Edit
-          </button>
-          <button
-            onClick={() => onDelete && onDelete(post.id)}
-            className="flex items-center gap-1 px-3 py-1 text-sm bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition"
-          >
-            <Trash className="w-4 h-4" /> Delete
-          </button>
-        </div>
-      )}
+        {currentUser?.id === post.user.id && (
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => onEdit && onEdit(post)}
+              className="flex items-center gap-1 px-3 py-1 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
+            >
+              <Pencil className="w-4 h-4" /> Edit
+            </button>
+            <button
+              onClick={() => onDelete && onDelete(post.id)}
+              className="flex items-center gap-1 px-3 py-1 text-sm bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition"
+            >
+              <Trash className="w-4 h-4" /> Delete
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

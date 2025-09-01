@@ -12,9 +12,15 @@ export const AuthProvider = ({ children }) => {
     return stored ? JSON.parse(stored) : null;
   });
 
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token") || null;
+  });
+
   const login = async (email, password) => {
     const res = await axios.post(`${API_URL}/auth/login`, { email, password });
     setUser(res.data.user);
+    setToken(res.data.token);
+
     localStorage.setItem("user", JSON.stringify(res.data.user));
     localStorage.setItem("token", res.data.token);
   };
@@ -28,12 +34,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,3 @@
-// src/components/PostModal.jsx
 import PostForm from "./PostForm";
 
 const PostModal = ({

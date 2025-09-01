@@ -19,7 +19,7 @@ const PostsIndex = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // 1️⃣ Fetch inicial
+    // 1️⃣ Init Fetch
     const fetchPosts = async () => {
       try {
         const res = await axios.get(`${API_URL}/posts`, {
@@ -34,20 +34,17 @@ const PostsIndex = () => {
     };
     fetchPosts();
 
-    // 2️⃣ WebSocket
+    // 2️⃣ Connect to ActionCable
     const cable = ActionCable.createConsumer("ws://localhost:3000/cable");
     const subscription = cable.subscriptions.create(
       { channel: "PostsChannel" },
       {
+        connected: () => console.log("Connect to PostsChannel"),
+        disconnected: () => console.log("❌ Disconnected from PostsChannel"),
         received: (data) => {
           if (data.post) {
             setPosts((prev) => {
-              const exists = prev.some((p) => p.id === data.post.id);
-              if (exists) {
-                // update
-                return prev.map((p) => (p.id === data.post.id ? data.post : p));
-              }
-              // new
+              if (prev.some((p) => p.id === data.post.id)) return prev;
               const updated = [...prev, data.post];
               return updated.sort(
                 (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -67,7 +64,6 @@ const PostsIndex = () => {
     };
   }, [token]);
 
-  // 🔹 Nuevo o edición
   const handleChange = (e) =>
     setNewPost({ ...newPost, [e.target.name]: e.target.value });
 
@@ -77,87 +73,67 @@ const PostsIndex = () => {
 
     try {
       setSubmitting(true);
-
-      if (newPost.id) {
-        // EDITAR
-        await axios.put(
-          `${API_URL}/posts/${newPost.id}`,
-          { post: { title: newPost.title, body: newPost.body } },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        // CREAR
-        await axios.post(
-          `${API_URL}/posts`,
-          { post: { title: newPost.title, body: newPost.body } },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
+      await axios.post(
+        `${API_URL}/posts`,
+        { post: { title: newPost.title, body: newPost.body } },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setNewPost({ title: "", body: "" });
       setShowDrawer(false);
-    } catch (err) {
-      console.error("Error creando/actualizando post:", err);
+    } catch (error) {
+      console.error("Error creating post:", error);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // 🔹 Eliminar
+  const handleEdit = (post) => {
+    setNewPost({ title: post.title, body: post.body });
+    setShowDrawer(true);
+  };
+
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Seguro que quieres eliminar este post?")) return;
     try {
       await axios.delete(`${API_URL}/posts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setPosts((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
-      console.error("Error eliminando post:", err);
+    } catch (error) {
+      console.error("Error deleting post:", error);
     }
-  };
+  }
 
-  // 🔹 Abrir modal en modo edición
-  const handleEdit = (post) => {
-    setNewPost(post);
-    setShowDrawer(true);
-  };
-
-  if (loading) return <p className="text-center mt-10">Cargando posts...</p>;
+  if (loading) return <p className="text-center mt-10">Loading posts...</p>;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 relative">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-center">Todos los Posts</h1>
+        <h1 className="text-3xl font-bold text-center">All Post</h1>
         {user && (
           <button
-            onClick={() => {
-              setNewPost({ title: "", body: "" });
-              setShowDrawer(true);
-            }}
+            onClick={() => setShowDrawer(true)}
             className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-500 transition"
           >
-            Nuevo Post
+            New Post
           </button>
         )}
       </div>
 
-      {posts.length === 0 ? (
-        <p className="text-center text-gray-500">No hay posts aún.</p>
+      {Array.isArray(posts) && posts.length === 0 ? (
+        <p className="text-center text-gray-500">Dont Post Yet</p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => (
-            <CardPost
-              key={post.id}
-              post={post}
-              onEdit={() => handleEdit(post)}
-              onDelete={() => handleDelete(post.id)}
-              canEdit={user && user.id === post.user?.id}
+            <CardPost 
+              key={post.id} 
+              post={post} 
+              onEdit={handleEdit} 
+              onDelete={handleDelete} 
             />
           ))}
         </div>
       )}
 
-      {/* Drawer unificado */}
+      {/* unified drawer */}
       <PostModal
         isOpen={showDrawer}
         onClose={() => setShowDrawer(false)}

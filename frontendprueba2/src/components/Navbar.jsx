@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { navLinks, images } from "../utils/data";
 import AuthModal from "./AuthModal";
 import { useAuth } from "../context/AuthContext";
-import { Menu, X } from "lucide-react"; // íconos para el menú
+import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
   const [showModal, setShowModal] = useState(false);
