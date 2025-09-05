@@ -8,7 +8,7 @@ import AuthModal from "./components/AuthModal";
 import PostShow from "./pages/PostShow";
 import MyPosts from "./pages/MyPosts";
 
-const Home = () => <h1 className="p-4 text-xl">Bienvenido a la App 🚀</h1>;
+const Home = () => <h1 className="p-4 text-xl">Welcome to the Blog App 🚀</h1>;
 
 function App() {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
       <Routes>
         {!user && <Route path="/" element={<LandingPage />} />}
@@ -34,7 +34,7 @@ function App() {
         onClose={() => setShowAuthModal(false)}
         initialState={modalState}
       />
-    </BrowserRouter>
+    </>
   );
 }
 

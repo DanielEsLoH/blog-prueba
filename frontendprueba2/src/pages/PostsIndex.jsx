@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import cable from "../cable";
+import { getConsumer } from "../cable";
 import CardPost from "../components/CardPost";
 import PostModal from "../components/PostModal";
 import { useAuth } from "../context/AuthContext";
@@ -33,9 +33,12 @@ const PostsIndex = () => {
       }
     };
     fetchPosts();
+    
+    if (!user) return;
+    const consumer = getConsumer();
 
     // 2️⃣ Connect to ActionCable
-    const subscription = cable.subscriptions.create(
+    const subscription = consumer.subscriptions.create(
       { channel: "PostsChannel" },
       {
         received: (data) => {
@@ -62,7 +65,7 @@ const PostsIndex = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [token]);
+  }, [user]);
 
   const handleChange = (e) =>
     setNewPost({ ...newPost, [e.target.name]: e.target.value });

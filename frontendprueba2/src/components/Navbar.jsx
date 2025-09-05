@@ -26,7 +26,7 @@ const Navbar = () => {
     }
   };
 
-  const logo = images.find(img => img.id === 1);
+  const logo = images.find((img) => img.id === 1);
 
   return (
     <>
@@ -35,14 +35,14 @@ const Navbar = () => {
         <Link to="/" className="flex items-center gap-2">
           <img src={logo.src} alt={logo.alt} className="h-8 w-auto object-contain" />
           <span className="text-xl font-bold text-indigo-800 hover:text-indigo-900 transition-all">
-            PosTeando
+            PostIng
           </span>
         </Link>
 
         {/* Desktop menu */}
         <div className="hidden md:flex items-center gap-4">
           {!user ? (
-            navLinks.map(link => (
+            navLinks.map((link) => (
               <button
                 key={link.name}
                 onClick={() => handleClick(link)}
@@ -53,16 +53,20 @@ const Navbar = () => {
             ))
           ) : (
             <>
-              <span className="text-gray-700">Hellow, {user.name}</span>
+              <span className="text-gray-700">Hello, {user.name}</span>
+
+              {/* My Posts menos llamativo */}
               <Link
                 to="/myposts"
-                className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-all"
+                className="px-4 py-2 rounded-md bg-indigo-200 text-indigo-800 hover:bg-indigo-300 transition-colors"
               >
                 My Posts
               </Link>
+
+              {/* Logout */}
               <button
                 onClick={logout}
-                className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-400 transition-all"
+                className="px-4 py-2 rounded-md bg-red-200 text-red-800 hover:bg-red-300 transition-colors"
               >
                 Logout
               </button>
@@ -70,7 +74,7 @@ const Navbar = () => {
           )}
         </div>
 
-         {/* Mobile menu button */}
+        {/* Mobile menu button */}
         <button
           className="md:hidden p-2 text-indigo-800 hover:text-indigo-900"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -79,14 +83,15 @@ const Navbar = () => {
         </button>
       </nav>
 
-      {/* Mobile menu (sidebar overlay) */}
+      {/* Mobile menu overlay */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 duration-300 ${
           mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
         onClick={() => setMobileMenuOpen(false)}
       ></div>
 
+      {/* Mobile menu sidebar */}
       <div
         className={`fixed top-0 right-0 w-64 h-full bg-white shadow-lg z-50 transform transition-transform duration-300 flex flex-col ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
@@ -113,21 +118,25 @@ const Navbar = () => {
           ) : (
             <>
               <span className="px-4 text-gray-700 font-medium">
-                👋 Hola, {user.name}
+                👋 Hello, {user.name}
               </span>
+
+              {/* My Posts  */}
               <Link
                 to="/myposts"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-500 transition-all text-center"
+                className="px-4 py-2 rounded-md bg-indigo-200 text-indigo-800 hover:bg-indigo-300 transition-colors text-center"
               >
                 My Posts
               </Link>
+
+              {/* Logout */}
               <button
                 onClick={() => {
                   logout();
                   setMobileMenuOpen(false);
                 }}
-                className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-400 transition-all"
+                className="px-4 py-2 rounded-md bg-red-200 text-red-800 hover:bg-red-300 transition-colors"
               >
                 Logout
               </button>
