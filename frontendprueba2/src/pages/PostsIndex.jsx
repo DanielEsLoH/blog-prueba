@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import * as ActionCable from "@rails/actioncable";
+import cable from "../cable";
 import CardPost from "../components/CardPost";
 import PostModal from "../components/PostModal";
 import { useAuth } from "../context/AuthContext";
@@ -35,24 +35,25 @@ const PostsIndex = () => {
     fetchPosts();
 
     // 2️⃣ Connect to ActionCable
-    const cable = ActionCable.createConsumer("ws://localhost:3000/cable");
     const subscription = cable.subscriptions.create(
       { channel: "PostsChannel" },
       {
-        connected: () => console.log("Connect to PostsChannel"),
-        disconnected: () => console.log("❌ Disconnected from PostsChannel"),
         received: (data) => {
           if (data.post) {
+            // update/create
             setPosts((prev) => {
-              if (prev.some((p) => p.id === data.post.id)) return prev;
-              const updated = [...prev, data.post];
+              const updated = prev.some((p) => p.id === data.post.id)
+                ? prev.map((p) => (p.id === data.post.id ? data.post : p))
+                : [...prev, data.post];
+
               return updated.sort(
                 (a, b) => new Date(b.created_at) - new Date(a.created_at)
               );
             });
           }
-          if (data.deleted_id) {
-            setPosts((prev) => prev.filter((p) => p.id !== data.deleted_id));
+
+          if (data.deleted || data.post_id) {
+            setPosts((prev) => prev.filter((p) => p.id !== data.post_id));
           }
         },
       }
@@ -60,7 +61,6 @@ const PostsIndex = () => {
 
     return () => {
       subscription.unsubscribe();
-      cable.disconnect();
     };
   }, [token]);
 
@@ -73,26 +73,42 @@ const PostsIndex = () => {
 
     try {
       setSubmitting(true);
-      await axios.post(
-        `${API_URL}/posts`,
-        { post: { title: newPost.title, body: newPost.body } },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setNewPost({ title: "", body: "" });
+
+      if (newPost.id) {
+        // 🔄 Edit
+         const { data: updatedPost } = await axios.patch(
+          `${API_URL}/posts/${newPost.id}`,
+          { post: { title: newPost.title, body: newPost.body } },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // 🆕 Create
+        await axios.post(
+          `${API_URL}/posts`,
+          { post: { title: newPost.title, body: newPost.body } },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      // reset form
+      setNewPost({ id: null, title: "", body: "" });
       setShowDrawer(false);
     } catch (error) {
-      console.error("Error creating post:", error);
+      console.error("Error saving post:", error);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleEdit = (post) => {
-    setNewPost({ title: post.title, body: post.body });
+    setNewPost({ id: post.id, title: post.title, body: post.body });
     setShowDrawer(true);
   };
 
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Sure you want to delete this post?");
+    if (!confirmDelete) return;
+
     try {
       await axios.delete(`${API_URL}/posts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -100,7 +116,7 @@ const PostsIndex = () => {
     } catch (error) {
       console.error("Error deleting post:", error);
     }
-  }
+  };
 
   if (loading) return <p className="text-center mt-10">Loading posts...</p>;
 
@@ -123,11 +139,11 @@ const PostsIndex = () => {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => (
-            <CardPost 
-              key={post.id} 
-              post={post} 
-              onEdit={handleEdit} 
-              onDelete={handleDelete} 
+            <CardPost
+              key={post.id}
+              post={post}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           ))}
         </div>

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Pencil, Trash } from "lucide-react";
+import { ArrowRight, MessageSquare, Pencil, Trash } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const CardPost = ({ post, onEdit, onDelete }) => {
@@ -49,6 +49,12 @@ const CardPost = ({ post, onEdit, onDelete }) => {
           Read more
           <ArrowRight className="ml-2 w-4 h-4" />
         </Link>
+
+        {/* Count Comments */}
+        <div className="flex items-center text-gray-500 text-sm">
+          <MessageSquare className="w-4 h-4 mr-1" />
+          {post.comments_count || 0} Comments
+        </div>
 
         {currentUser?.id === post.user.id && (
           <div className="flex gap-2 mt-4">

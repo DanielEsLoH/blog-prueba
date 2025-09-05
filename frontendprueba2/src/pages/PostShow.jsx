@@ -37,23 +37,12 @@ const PostShow = () => {
     if (!id) return;
 
     const subscription = consumer.subscriptions.create(
-      { channel: "CommentsChannel", post_id: id },
+      { channel: "PostsChannel" },
       {
         received(data) {
           console.log("Received data:", data);
-          if (data.comment) {
-            setPost((prev) => ({
-              ...prev,
-              comments: [data.comment, ...prev.comments],
-            }));
-          }
-          if (data.deleted_comment_id) {
-            setPost((prev) => ({
-              ...prev,
-              comments: prev.comments.filter(
-                (c) => c.id !== data.deleted_comment_id
-              ),
-            }));
+          if (data.post && data.post.id.toString() === id) {
+            setPost(data.post);
           }
         },
       }
